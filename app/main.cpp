@@ -21,8 +21,8 @@ float Sine(const int x, const float a, const float b, const float c, const float
     return a * glm::sin(b * static_cast<float>(x) + c) + d;
 }
 
-float SlopeSurface(const int x, const int y, const float a, const float b, const float c) {
-    return Sine(x, a, b, c, 0.f)+static_cast<float>(y);
+float SineSurface(const int x, const int y, const float a, const float b, const float c) {
+    return Sine(x+y, a, b, c, 0.f);
 }
 
 std::pair<float, float> Parametric(const float t, const float o) {
@@ -39,6 +39,24 @@ std::pair<float, float> Circle(const float t, const float x0, const float y0, co
     float y = y0 + glm::cos(t) * r;
 
     return {x, y};
+}
+
+std::tuple<float, float, float> Torus(const float t, const float s, const float R, const float r, const float x0, const float y0) {
+
+    float x = x0 + (R + r * glm::cos(t)) * glm::cos(s);
+    float y = y0 + (R + r * glm::cos(t)) * glm::sin(s);
+    float z = r * glm::sin(t);
+
+    return {x, y, z};
+}
+
+std::tuple<float, float, float> Sphere(const float t, const float s, const float r, const float x0, const float y0) {
+
+    float x = x0 + r * glm::sin(t) * glm::cos(s);
+    float y = y0 + r * glm::sin(t) * glm::sin(s);
+    float z = r * glm::cos(t);
+
+    return {x, y, z};
 }
 
 int main()
@@ -62,7 +80,108 @@ int main()
 
     {
         GR::Grapher::SurfaceInfo info;
-        info.function = std::bind(SlopeSurface, std::placeholders::_1, std::placeholders::_2, 30.f, 0.1f, 0.f);
+        info.function = std::bind(SineSurface, std::placeholders::_1, std::placeholders::_2, 5.f, 0.1f, 0.f);
+        info.colorlo = 0xffff7f00;
+        info.colorhi = 0xfffe900;
+
+        grapher.AddSurface(info);
+    }
+
+    {
+        GR::Grapher::FunctionInfo info;
+
+        info.color = 0xfffd0000;
+
+        for (int i = 0; i < 25; ++i) {
+            info.function = std::bind(Linear, std::placeholders::_1, 0.f, static_cast<float>(surface->h) - static_cast<float>(i) * (static_cast<float>(i) * 0.07f) * 3.f);
+            grapher.AddFunction(info);
+        }
+    }
+
+    {
+        GR::Grapher::FunctionInfo info;
+
+        info.color = 0xffffd644;
+        info.axis = GR::Axis::Y;
+        info.plot = GR::PlotType::LINE;
+
+        for (int i = 0; i < 7; ++i) {
+            info.function = std::bind(Sine, std::placeholders::_1, 10.f, 0.1f, static_cast<float>(i) * 1.f, 15.f + static_cast<float>(i) * 30.f);
+
+            grapher.AddFunction(info);
+        }
+    }
+
+    {
+        GR::Grapher::EquationInfo info;
+        info.plot = GR::PlotType::LINE;
+        info.color = 0xff23d6ff;
+
+        for (int i = 0; i < 10; ++i) {
+            info.equation = std::bind(Circle, std::placeholders::_1, static_cast<float>(surface->w) * 0.2f + 100.f * static_cast<float>(i), static_cast<float>(surface->h) * 0.75 - 15.f * static_cast<float>(i), 40.f);
+            info.t0 = 0.f;
+            info.tMax = TWOPI + 0.5f * PI;
+            info.tStep = TWOPI / (3.f + static_cast<float>(i));
+
+            grapher.AddEquation(info);
+        }
+
+        info.color = 0xff88ff84;
+
+        info.t0 = 0.f;
+        info.tMax = TWOPI + 0.5f * PI;
+        info.tStep = TWOPI / 3.f;
+        for (int i = 0; i < 9; ++i) {
+            float angle = glm::radians(static_cast<float>(i) * 40.f);
+            info.equation = std::bind(Circle, std::placeholders::_1,
+                SCR_WIDTH * 0.7f + static_cast<float>(i) * glm::cos(angle) * 35.f,
+                SCR_HEIGHT * 0.4f + static_cast<float>(i) * glm::sin(angle) * 35.f,
+                static_cast<float>(i + 1) * 10.f);
+            grapher.AddEquation(info);
+        }
+    }
+
+    {
+        GR::Grapher::ParametricSurfaceInfo info;
+
+
+        info.colorlo = 0xff000000;
+        info.colorhi = 0xffffffff;
+
+        info.t0 = 0.f;
+        info.tMax = TWOPI + 0.5f * PI;
+        info.tStep = TWOPI / 360.f;
+        info.s0 = 0.f;
+        info.sMax = TWOPI + 0.5f * PI;
+        info.sStep = TWOPI / 360.f;
+
+        for (int i = 0; i < 3; ++i) {
+            info.function = std::bind(Sphere, std::placeholders::_1, std::placeholders::_2, 120.f - static_cast<float>(i) * 20.f, SCR_WIDTH * 0.15f + 150.f * static_cast<float>(i), SCR_HEIGHT * 0.15f+ 30.f * static_cast<float>(i));
+
+            grapher.AddParametricSurface(info);
+        }
+    }
+
+    {
+        GR::Grapher::ParametricSurfaceInfo info;
+
+        info.function = std::bind(Torus, std::placeholders::_1, std::placeholders::_2, 100.f, 20.f, SCR_WIDTH * 0.75f, SCR_HEIGHT * 0.75f);
+        info.t0 = 0.f;
+        info.tMax = TWOPI + 0.5f * PI;
+        info.tStep = TWOPI / 360.f;
+        info.s0 = 0.f;
+        info.sMax = TWOPI + 0.5f * PI;
+        info.sStep = TWOPI / 720.f;
+
+        grapher.AddParametricSurface(info);
+    }
+
+    /*
+    {
+        GR::Grapher::SurfaceInfo info;
+        info.function = std::bind(SlopeSurface, std::placeholders::_1, std::placeholders::_2, 5.f, 0.1f, 0.f);
+        info.colorlo = 0xff0f00ff;
+        info.colorhi = 0xfff00f00;
         grapher.AddSurface(info);
     }
 
@@ -121,6 +240,21 @@ int main()
         }
     }
 
+    { // Parametric surface
+        GR::Grapher::ParametricSurfaceInfo info;
+
+        info.function = std::bind(Torus, std::placeholders::_1, std::placeholders::_2, 100.f, 20.f, 200.f, 200.f);
+        info.t0 = 0.f;
+        info.tMax = TWOPI + 0.5f * PI;
+        info.tStep = TWOPI / 360.f;
+        info.s0 = 0.f;
+        info.sMax = TWOPI + 0.5f * PI;
+        info.sStep = TWOPI / 720.f;
+
+        grapher.AddParametricSurface(info);
+    }
+    */
+
     bool running = true;
     bool draw = true;
 
@@ -134,6 +268,15 @@ int main()
                 case SDL_EVENT_KEY_DOWN:
                     if (event.key.key == SDLK_D) {
                         draw = true;
+                    }
+                    if (event.key.key == SDLK_ESCAPE) {
+                        running = false;
+                    }
+                    if (event.key.key == SDLK_P) {
+
+                        std::cout << "Saving frame to BMP" << std::endl;
+                        SDL_SaveBMP(surface, "out.bmp");
+                        // framebuffer to png
                     }
                 break;
                 case SDL_EVENT_QUIT:
