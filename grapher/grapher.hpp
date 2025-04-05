@@ -342,7 +342,7 @@ namespace GR
             for (int y = 0; y < surface.height; ++y) {
                 for (int x = 0; x < surface.width; ++x) {
                     Pixel pixel = 0xffffffff;
-                    const float normalized = std::clamp(values[x + y*surface.width] / (max - min), 0.f, 1.f);
+                    const float normalized = glm::clamp(values[x + y*surface.width] / (max - min), 0.f, 1.f);
 
                     const auto res = interpolate({lo.bytes[2], lo.bytes[1], lo.bytes[0]}, {hi.bytes[2], hi.bytes[1], hi.bytes[0]}, normalized);
 
@@ -438,7 +438,7 @@ namespace GR
                 Pixel lo { info.colorlo };
                 Pixel hi { info.colorhi };
 
-                const float normalized = std::clamp(height / (max - min), 0.f, 1.f);
+                const float normalized = glm::clamp(height / (max - min), 0.f, 1.f);
 
                 auto res = interpolate({lo.bytes[2], lo.bytes[1], lo.bytes[0]}, {hi.bytes[2], hi.bytes[1], hi.bytes[0]}, normalized);
 
